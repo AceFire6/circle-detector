@@ -64,7 +64,7 @@
                 <properties/>
                 <border type="none"/>
                 <children>
-                  <component id="cfb31" class="javax.swing.JLabel" binding="image">
+                  <component id="cfb31" class="javax.swing.JLabel" binding="imageLabel">
                     <constraints border-constraint="Center"/>
                     <properties>
                       <horizontalAlignment value="0"/>
@@ -80,7 +80,7 @@
                 <properties/>
                 <border type="none"/>
                 <children>
-                  <component id="ac1d4" class="javax.swing.JLabel" binding="EdgeImage">
+                  <component id="ac1d4" class="javax.swing.JLabel" binding="EdgeImageLabel">
                     <constraints border-constraint="Center"/>
                     <properties>
                       <horizontalAlignment value="0"/>
@@ -96,7 +96,7 @@
                 <properties/>
                 <border type="none"/>
                 <children>
-                  <component id="e4e60" class="javax.swing.JLabel" binding="CircleImage">
+                  <component id="e4e60" class="javax.swing.JLabel" binding="CircleImageLabel">
                     <constraints border-constraint="Center"/>
                     <properties>
                       <horizontalAlignment value="0"/>
