@@ -82,6 +82,26 @@ public class MainWindow {
         }
     }
 
+    private static double Gaussian(int x) {
+        double sigmaSq = 1.4 * 1.4;
+        return ((1 / (2 * Math.PI * sigmaSq)) * Math.exp(-(x * x) / sigmaSq));
+    }
+
+    private static double[] GaussianRange(int minX, int maxX) {
+        double total = 0;
+        double[] gaussRange = new double[(maxX - minX) + 1];
+
+        for (int i = minX; i < maxX + 1; i++) {
+            gaussRange[i - minX] = Gaussian(i);
+        }
+
+        for (int i = 0; i < gaussRange.length; i++) {
+            gaussRange[i] = gaussRange[i] / total;
+        }
+
+        return gaussRange;
+    }
+
     public MainWindow() {
         // When clicked the button opens the file selector dialog and if the imageLabel is valid it sets it
         importImageButton.addMouseListener(new MouseAdapter() {
