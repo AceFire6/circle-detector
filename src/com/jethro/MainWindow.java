@@ -113,12 +113,61 @@ public class MainWindow {
         return gaussRange;
     }
 
+    /**
+     * Runs convolution on the input matrix using the filter horizontally and then vertically.
+     * @param matrix double[][] the convolution is to be run on.
+     * @param filter double[] to use for the convolution.
+     * @return double[][] convolved matrix.
+     */
+    private static double[][] oneWayConvolve(double[][] matrix, double[] filter) {
+        double[][] horizontal = oneWayConvolve(matrix, filter, true);
+        return oneWayConvolve(horizontal, filter, false);
+    }
+
+    /**
+     * Do all required steps to get the hough transform to the image.
+     * Generates multiple images that are to be displayed on the screen when they are generated.
+     * @param img Image source to be processed.
+     */
+    private static void processImage(Image img) {
+
+    }
+
+    /**
+     * Convolves in a single direction. Uses relfection at edges.
+     * @param matrix double[][] matrix the convolution is to be run on.
+     * @param filter double[] filter to be used in convolution.
+     * @param horizontal boolean flag determining which direction to oneWayConvolve.
+     * @return double[][] convolved matrix
+     */
+    private static double[][] oneWayConvolve(double[][] matrix, double[] filter, boolean horizontal) {
+        double[][] newMatrix = new double[matrix.length][matrix[0].length];
+
+        for (int y = 0; y < matrix.length; y++) {
+            for (int x = 0; x < matrix[y].length; x++) {
+                int index = ((int)-(filter.length / 2));
+                for (int f = 0; f < filter.length; f++) {
+                    int sampleIndex;
+                    if (horizontal) {
+                        sampleIndex = Math.max(0, Math.min(x + f + index, matrix[y].length - 1)); // bound the filter
+                        newMatrix[y][x] += filter[f] * matrix[y][sampleIndex];
+                    } else {
+                        sampleIndex = Math.max(0, Math.min(y + f + index, matrix.length - 1)); // bound the filter
+                        newMatrix[y][x] += filter[f] * matrix[sampleIndex][x];
+                    }
+                }
+            }
+        }
+        return newMatrix;
+    }
+
     public MainWindow() {
         // When clicked the button opens the file selector dialog and if the imageLabel is valid it sets it
         importImageButton.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 setIconImage(imageLabel, baseImg);
+                processImage(baseImg);
             }
         });
 
