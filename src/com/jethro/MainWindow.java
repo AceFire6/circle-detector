@@ -35,7 +35,7 @@ public class MainWindow {
     private Image circleImg;
 
     /**
-     * Sets the JLabel icon
+     * Sets the JLabel icon.
      * @param label JLabel to set.
      * @param img Image to set the JLabel's icon to.
      */
@@ -82,11 +82,22 @@ public class MainWindow {
         }
     }
 
+    /**
+     * Samples the gaussian distribution at (x, 0).
+     * @param x int x coordinate to sample the gaussian at.
+     * @return Double of the gaussian at point (x, 0).
+     */
     private static double Gaussian(int x) {
         double sigmaSq = 1.4 * 1.4;
         return ((1 / (2 * Math.PI * sigmaSq)) * Math.exp(-(x * x) / sigmaSq));
     }
 
+    /**
+     * Returns a range of values from minX to maxX.
+     * @param minX int lower bound of the range.
+     * @param maxX int upper bound of the range.
+     * @return Double array containing normalized results.
+     */
     private static double[] GaussianRange(int minX, int maxX) {
         double total = 0;
         double[] gaussRange = new double[(maxX - minX) + 1];
