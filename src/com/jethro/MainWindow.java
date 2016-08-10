@@ -104,6 +104,7 @@ public class MainWindow {
 
         for (int i = minX; i < maxX + 1; i++) {
             gaussRange[i - minX] = Gaussian(i);
+            total += gaussRange[i - minX];
         }
 
         for (int i = 0; i < gaussRange.length; i++) {
