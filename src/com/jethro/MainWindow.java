@@ -171,7 +171,7 @@ public class MainWindow {
         for (int y = 0; y < img.getHeight(); y++) {
             for (int x = 0; x < img.getWidth(); x++) {
                 Color c = new Color(img.getRGB(x, y));
-                int cGray = (c.getRed() + c.getGreen() + c.getBlue()) / 3;
+                int cGray = (int) ((0.2989 * c.getRed()) + (0.5870 * c.getGreen()) + (0.1140 * c.getBlue()));
                 gImg.setRGB(x, y, new Color(cGray, cGray, cGray).getRGB());
             }
         }
