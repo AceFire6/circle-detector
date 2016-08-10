@@ -73,6 +73,22 @@
                   </component>
                 </children>
               </grid>
+              <grid id="a2143" binding="GrayscaleImageTab" layout-manager="BorderLayout" hgap="0" vgap="0">
+                <constraints>
+                  <tabbedpane title="Grayscale Image"/>
+                </constraints>
+                <properties/>
+                <border type="none"/>
+                <children>
+                  <component id="378d5" class="javax.swing.JLabel" binding="grayscaleImageLabel">
+                    <constraints border-constraint="Center"/>
+                    <properties>
+                      <horizontalAlignment value="0"/>
+                      <text value=""/>
+                    </properties>
+                  </component>
+                </children>
+              </grid>
               <grid id="ed30" binding="EdgeImageTab" layout-manager="BorderLayout" hgap="0" vgap="0">
                 <constraints>
                   <tabbedpane title="Edge Image"/>

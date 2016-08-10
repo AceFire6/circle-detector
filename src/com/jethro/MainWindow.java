@@ -28,6 +28,8 @@ public class MainWindow {
     private JLabel imageLabel;
     private JLabel EdgeImageLabel;
     private JLabel CircleImageLabel;
+    private JPanel GrayscaleImageTab;
+    private JLabel grayscaleImageLabel;
 
     private Image baseImg;
     private Image binaryImg;
@@ -35,11 +37,9 @@ public class MainWindow {
     private Image circleImg;
 
     /**
-     * Sets the JLabel icon.
-     * @param label JLabel to set.
-     * @param img Image to set the JLabel's icon to.
+     * Loads and sets the base image.
      */
-    private void setIconImage(JLabel label, Image img) {
+    private void readAndSetBaseImage() {
         JFileChooser chooser = new JFileChooser(System.getProperty("user.dir"));
         FileNameExtensionFilter filter = new FileNameExtensionFilter("JPG, PNG, BMP & GIF Images",
                 "jpg", "png", "bmp", "gif");
@@ -47,8 +47,8 @@ public class MainWindow {
         int returnVal = chooser.showOpenDialog(MainPanel);
         if(returnVal == JFileChooser.APPROVE_OPTION) {
             try {
-                img = ImageIO.read(chooser.getSelectedFile());
-                label.setIcon(new ImageIcon(img));
+                baseImg = ImageIO.read(chooser.getSelectedFile());
+                imageLabel.setIcon(new ImageIcon(baseImg));
             } catch (IOException ioe) {
                 String msg = "Failed to open imageLabel: " + chooser.getSelectedFile().getName() + "\n";
                 msg += "Error: " + ioe.getMessage();
@@ -127,10 +127,9 @@ public class MainWindow {
     /**
      * Do all required steps to get the hough transform to the image.
      * Generates multiple images that are to be displayed on the screen when they are generated.
-     * @param img Image source to be processed.
      */
-    private static void processImage(Image img) {
-
+    private void processImage() {
+        grayscaleImageLabel.setIcon(new ImageIcon(imageToGrayscale((BufferedImage) baseImg)));
     }
 
     /**
@@ -161,13 +160,31 @@ public class MainWindow {
         return newMatrix;
     }
 
+    /**
+     * Converts an image from RGB to grayscale
+     * @param img Source image to convert.
+     * @return BufferedImage grayscale version of img.
+     */
+    private static BufferedImage imageToGrayscale(BufferedImage img) {
+        BufferedImage gImg = new BufferedImage(img.getWidth(), img.getHeight(), img.getType());
+
+        for (int y = 0; y < img.getHeight(); y++) {
+            for (int x = 0; x < img.getWidth(); x++) {
+                Color c = new Color(img.getRGB(x, y));
+                int cGray = (c.getRed() + c.getGreen() + c.getBlue()) / 3;
+                gImg.setRGB(x, y, new Color(cGray, cGray, cGray).getRGB());
+            }
+        }
+        return gImg;
+    }
+
     public MainWindow() {
         // When clicked the button opens the file selector dialog and if the imageLabel is valid it sets it
         importImageButton.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                setIconImage(imageLabel, baseImg);
-                processImage(baseImg);
+                readAndSetBaseImage();
+                processImage();
             }
         });
 
