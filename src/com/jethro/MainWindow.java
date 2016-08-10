@@ -19,19 +19,23 @@ public class MainWindow {
     private JButton runEdgeDetectionButton;
 
     private JTabbedPane imageTabs;
-    private JPanel CircleImageTab;
-    private JPanel EdgeImageTab;
-    private JPanel ImageTab;
-    private JPanel TabPanel;
-    private JPanel MainPanel;
+    private JPanel circleImageTab;
+    private JPanel edgeImageTab;
+    private JPanel imageTab;
+    private JPanel tabPanel;
+    private JPanel mainPanel;
 
     private JLabel imageLabel;
-    private JLabel EdgeImageLabel;
-    private JLabel CircleImageLabel;
-    private JPanel GrayscaleImageTab;
+    private JLabel edgeImageLabel;
+    private JLabel circleImageLabel;
+    private JPanel grayscaleImageTab;
     private JLabel grayscaleImageLabel;
+    private JPanel blurredImageTab;
+    private JLabel blurredImageLabel;
 
     private Image baseImg;
+    private Image grayscaleImg;
+    private Image blurredImg;
     private Image binaryImg;
     private Image edgeImg;
     private Image circleImg;
@@ -39,12 +43,12 @@ public class MainWindow {
     /**
      * Loads and sets the base image.
      */
-    private void readAndSetBaseImage() {
+    private void ReadAndSetBaseImage() {
         JFileChooser chooser = new JFileChooser(System.getProperty("user.dir"));
         FileNameExtensionFilter filter = new FileNameExtensionFilter("JPG, PNG, BMP & GIF Images",
                 "jpg", "png", "bmp", "gif");
         chooser.setFileFilter(filter);
-        int returnVal = chooser.showOpenDialog(MainPanel);
+        int returnVal = chooser.showOpenDialog(mainPanel);
         if(returnVal == JFileChooser.APPROVE_OPTION) {
             try {
                 baseImg = ImageIO.read(chooser.getSelectedFile());
@@ -52,7 +56,7 @@ public class MainWindow {
             } catch (IOException ioe) {
                 String msg = "Failed to open imageLabel: " + chooser.getSelectedFile().getName() + "\n";
                 msg += "Error: " + ioe.getMessage();
-                JOptionPane.showMessageDialog(MainPanel, msg, "Image IO Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(mainPanel, msg, "Image IO Error", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
@@ -61,12 +65,12 @@ public class MainWindow {
      * Saves the image in the currently selected tab to the directory specified by the user.
      * @param tab JPanel to get the image from.
      */
-    private void saveTabImage(JPanel tab) {
+    private void SaveTabImage(JPanel tab) {
         JFileChooser chooser = new JFileChooser(System.getProperty("user.dir"));
         FileNameExtensionFilter filter = new FileNameExtensionFilter("JPG, PNG, BMP & GIF Images",
                 "jpg", "png", "bmp", "gif");
         chooser.setFileFilter(filter);
-        int returnVal = chooser.showSaveDialog(MainPanel);
+        int returnVal = chooser.showSaveDialog(mainPanel);
         if(returnVal == JFileChooser.APPROVE_OPTION) {
             try {
                 BufferedImage img = (BufferedImage) ((ImageIcon)((JLabel)tab.getComponent(0)).getIcon()).getImage();
@@ -77,7 +81,7 @@ public class MainWindow {
             } catch (IOException ioe) {
                 String msg = "Failed to open imageLabel: " + chooser.getSelectedFile().getName() + "\n";
                 msg += "Error: " + ioe.getMessage();
-                JOptionPane.showMessageDialog(MainPanel, msg, "Image IO Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(mainPanel, msg, "Image IO Error", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
@@ -115,50 +119,59 @@ public class MainWindow {
     }
 
     /**
-     * Runs convolution on the input matrix using the filter horizontally and then vertically.
-     * @param matrix double[][] the convolution is to be run on.
-     * @param filter double[] to use for the convolution.
-     * @return double[][] convolved matrix.
-     */
-    private static double[][] oneWayConvolve(double[][] matrix, double[] filter) {
-        double[][] horizontal = oneWayConvolve(matrix, filter, true);
-        return oneWayConvolve(horizontal, filter, false);
-    }
-
-    /**
      * Do all required steps to get the hough transform to the image.
      * Generates multiple images that are to be displayed on the screen when they are generated.
      */
-    private void processImage() {
-        grayscaleImageLabel.setIcon(new ImageIcon(imageToGrayscale((BufferedImage) baseImg)));
+    private void ProcessImage() {
+        grayscaleImg = ImageToGrayscale((BufferedImage) baseImg);
+        grayscaleImageLabel.setIcon(new ImageIcon(grayscaleImg));
+
+        blurredImg = GaussianBlur((BufferedImage) grayscaleImg, 5);
+        blurredImageLabel.setIcon(new ImageIcon(blurredImg));
+    }
+
+    /**
+     * Runs convolution on the input matrix using the filter horizontally and then vertically.
+     * @param img BufferedImage the convolution is to be run on.
+     * @param filter double[] to use for the convolution.
+     * @return BufferedImage convolved matrix.
+     */
+    private static BufferedImage OneWayConvolve(BufferedImage img, double[] filter) {
+        BufferedImage horizontal = OneWayConvolve(img, filter, true);
+        return OneWayConvolve(horizontal, filter, false);
     }
 
     /**
      * Convolves in a single direction. Uses relfection at edges.
-     * @param matrix double[][] matrix the convolution is to be run on.
+     * @param img BufferedImage matrix the convolution is to be run on.
      * @param filter double[] filter to be used in convolution.
-     * @param horizontal boolean flag determining which direction to oneWayConvolve.
-     * @return double[][] convolved matrix
+     * @param horizontal boolean flag determining which direction to OneWayConvolve.
+     * @return BufferedImage convolved matrix
      */
-    private static double[][] oneWayConvolve(double[][] matrix, double[] filter, boolean horizontal) {
-        double[][] newMatrix = new double[matrix.length][matrix[0].length];
+    private static BufferedImage OneWayConvolve(BufferedImage img, double[] filter, boolean horizontal) {
+        BufferedImage convolvedImg = new BufferedImage(img.getWidth(), img.getHeight(), img.getType());
 
-        for (int y = 0; y < matrix.length; y++) {
-            for (int x = 0; x < matrix[y].length; x++) {
+        for (int y = 0; y < img.getHeight(); y++) {
+            for (int x = 0; x < img.getWidth(); x++) {
                 int index = ((int)-(filter.length / 2));
+                int filteredC = 0;
                 for (int f = 0; f < filter.length; f++) {
                     int sampleIndex;
+                    Color c;
                     if (horizontal) {
-                        sampleIndex = Math.max(0, Math.min(x + f + index, matrix[y].length - 1)); // bound the filter
-                        newMatrix[y][x] += filter[f] * matrix[y][sampleIndex];
+                        sampleIndex = Math.max(0, Math.min(x + f + index, img.getWidth() - 1)); // bound the filter
+                        c = new Color(img.getRGB(sampleIndex, y));
                     } else {
-                        sampleIndex = Math.max(0, Math.min(y + f + index, matrix.length - 1)); // bound the filter
-                        newMatrix[y][x] += filter[f] * matrix[sampleIndex][x];
+                        sampleIndex = Math.max(0, Math.min(y + f + index, img.getHeight() - 1)); // bound the filter
+                        c = new Color(img.getRGB(x, sampleIndex));
                     }
+                    filteredC += (int)(c.getRed() * filter[f]); // Only works for grayscale images
                 }
+                Color newC = new Color(filteredC, filteredC, filteredC);
+                convolvedImg.setRGB(x, y, newC.getRGB());
             }
         }
-        return newMatrix;
+        return convolvedImg;
     }
 
     /**
@@ -166,7 +179,7 @@ public class MainWindow {
      * @param img Source image to convert.
      * @return BufferedImage grayscale version of img.
      */
-    private static BufferedImage imageToGrayscale(BufferedImage img) {
+    private static BufferedImage ImageToGrayscale(BufferedImage img) {
         BufferedImage gImg = new BufferedImage(img.getWidth(), img.getHeight(), img.getType());
 
         for (int y = 0; y < img.getHeight(); y++) {
@@ -179,13 +192,26 @@ public class MainWindow {
         return gImg;
     }
 
+    /**
+     * Use a square gaussian kernel of size kernelSize to blur the image.
+     * @param img BufferedImage to blur.
+     * @param kernelSize Size of the width and height of the gaussian kernel.
+     * @return BufferedImage of the blurred image.
+     */
+    private static BufferedImage GaussianBlur(BufferedImage img, int kernelSize) {
+        int minX = -(kernelSize / 2);
+        double[] kernel = GaussianRange(minX, minX + kernelSize - 1);
+
+        return OneWayConvolve(img, kernel);
+    }
+
     public MainWindow() {
         // When clicked the button opens the file selector dialog and if the imageLabel is valid it sets it
         importImageButton.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                readAndSetBaseImage();
-                processImage();
+                ReadAndSetBaseImage();
+                ProcessImage();
             }
         });
 
@@ -193,14 +219,14 @@ public class MainWindow {
         saveTabImageButton.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                saveTabImage((JPanel) imageTabs.getSelectedComponent());
+                SaveTabImage((JPanel) imageTabs.getSelectedComponent());
             }
         });
     }
 
     public static void main(String[] args) {
         JFrame frame = new JFrame("Hough Detector");
-        frame.setContentPane(new MainWindow().MainPanel);
+        frame.setContentPane(new MainWindow().mainPanel);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.pack();
         frame.setMinimumSize(new Dimension(800, 600));
