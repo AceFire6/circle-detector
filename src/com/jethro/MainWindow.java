@@ -32,13 +32,17 @@ public class MainWindow {
     private JLabel grayscaleImageLabel;
     private JPanel blurredImageTab;
     private JLabel blurredImageLabel;
+    private JPanel xGradientTab;
+    private JLabel xGradientImageLabel;
+    private JPanel yGradientTab;
+    private JLabel yGradientImageLabel;
 
-    private Image baseImg;
-    private Image grayscaleImg;
-    private Image blurredImg;
-    private Image binaryImg;
-    private Image edgeImg;
-    private Image circleImg;
+    private BufferedImage baseImg;
+    private BufferedImage grayscaleImg;
+    private BufferedImage blurredImg;
+    private BufferedImage binaryImg;
+    private BufferedImage edgeImg;
+    private BufferedImage circleImg;
 
     /**
      * Loads and sets the base image.
@@ -123,11 +127,18 @@ public class MainWindow {
      * Generates multiple images that are to be displayed on the screen when they are generated.
      */
     private void ProcessImage() {
-        grayscaleImg = ImageToGrayscale((BufferedImage) baseImg);
+        grayscaleImg = ImageToGrayscale(baseImg);
         grayscaleImageLabel.setIcon(new ImageIcon(grayscaleImg));
 
-        blurredImg = GaussianBlur((BufferedImage) grayscaleImg, 5);
+        blurredImg = GaussianBlur(grayscaleImg, 5);
         blurredImageLabel.setIcon(new ImageIcon(blurredImg));
+
+        BufferedImage[] gradients = SobelFilter(blurredImg);
+        xGradientImageLabel.setIcon(new ImageIcon(gradients[0]));
+        yGradientImageLabel.setIcon(new ImageIcon(gradients[1]));
+
+        edgeImg = gradients[2];
+        edgeImageLabel.setIcon(new ImageIcon(edgeImg));
     }
 
     /**
@@ -193,6 +204,39 @@ public class MainWindow {
 
         BufferedImage horizontal = OneWayConvolve(img, kernel, true);
         return OneWayConvolve(horizontal, kernel, false);
+    }
+
+    private static BufferedImage[] SobelFilter(BufferedImage img) {
+        int[][] filterX = new int[][]{{-1, 0, 1}, {-2, 0, 2}, {-1, 0, 1}};
+        int[][] filterY = new int[][]{{-1, -2, -1}, {0, 0, 0}, {1, 2, 1}};
+
+        BufferedImage xGradient = new BufferedImage(img.getWidth(), img.getHeight(), img.getType());
+        BufferedImage yGradient = new BufferedImage(img.getWidth(), img.getHeight(), img.getType());
+        BufferedImage edgeGradients = new BufferedImage(img.getWidth(), img.getHeight(), img.getType());
+
+        for (int y = 1; y < img.getHeight() - 1; y++) {
+            for (int x = 1; x < img.getWidth() - 1; x++) {
+                int xVal = 0;
+                int yVal = 0;
+                for (int fi = 0; fi < 3; fi++) {
+                    for (int fj = 0; fj < 3; fj++) {
+                        int c = new Color(img.getRGB(x + fj - 1, y + fi - 1)).getRed();
+                        xVal += c * filterX[fi][fj];
+                        yVal += c * filterY[fi][fj];
+                    }
+                }
+                xVal = Math.min(255, Math.abs(xVal));
+                yVal = Math.min(255, Math.abs(yVal));
+                xGradient.setRGB(x, y, new Color(xVal, xVal, xVal).getRGB());
+                yGradient.setRGB(x, y, new Color(yVal, yVal, yVal).getRGB());
+
+                int cG = (int) Math.ceil(Math.hypot(xVal, yVal));
+                cG = Math.min(255, Math.abs(cG));
+                edgeGradients.setRGB(x, y, new Color(cG, cG, cG).getRGB());
+            }
+        }
+
+        return new BufferedImage[]{xGradient, yGradient, edgeGradients};
     }
 
     public MainWindow() {
