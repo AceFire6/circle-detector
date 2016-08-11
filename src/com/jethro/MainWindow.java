@@ -131,17 +131,6 @@ public class MainWindow {
     }
 
     /**
-     * Runs convolution on the input matrix using the filter horizontally and then vertically.
-     * @param img BufferedImage the convolution is to be run on.
-     * @param filter double[] to use for the convolution.
-     * @return BufferedImage convolved matrix.
-     */
-    private static BufferedImage OneWayConvolve(BufferedImage img, double[] filter) {
-        BufferedImage horizontal = OneWayConvolve(img, filter, true);
-        return OneWayConvolve(horizontal, filter, false);
-    }
-
-    /**
      * Convolves in a single direction. Uses relfection at edges.
      * @param img BufferedImage matrix the convolution is to be run on.
      * @param filter double[] filter to be used in convolution.
@@ -202,7 +191,8 @@ public class MainWindow {
         int minX = -(kernelSize / 2);
         double[] kernel = GaussianRange(minX, minX + kernelSize - 1);
 
-        return OneWayConvolve(img, kernel);
+        BufferedImage horizontal = OneWayConvolve(img, kernel, true);
+        return OneWayConvolve(horizontal, kernel, false);
     }
 
     public MainWindow() {
