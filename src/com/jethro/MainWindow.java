@@ -9,8 +9,11 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
 import java.awt.image.BufferedImage;
+import java.awt.image.BufferedImageFilter;
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Array;
+import java.util.ArrayList;
 import java.util.Arrays;
 import javax.imageio.ImageIO;
 
@@ -41,6 +44,8 @@ public class MainWindow {
     private JLabel nonMaxImageLabel;
     private JPanel filteredNMSTab;
     private JLabel filteredNMSImageLabel;
+    private JPanel hysteresisImageTab;
+    private JLabel hysteresisImageLabel;
 
     private BufferedImage baseImg;
     private BufferedImage grayscaleImg;
@@ -49,6 +54,7 @@ public class MainWindow {
     private BufferedImage edgeImg;
     private BufferedImage nonMaxImage;
     private BufferedImage filteredNMSImage;
+    private BufferedImage hysteresisImage;
     private BufferedImage circleImg;
 
     /**
@@ -156,6 +162,9 @@ public class MainWindow {
         nonMaxImageLabel.setIcon(new ImageIcon(nonMaxImage));
         filteredNMSImage = NSMImages[1];
         filteredNMSImageLabel.setIcon(new ImageIcon(filteredNMSImage));
+
+        hysteresisImage = Hysteresis(filteredNMSImage);
+        hysteresisImageLabel.setIcon(new ImageIcon(hysteresisImage));
     }
 
     /**
@@ -278,7 +287,6 @@ public class MainWindow {
     private static BufferedImage[] NonMaximalFilter(BufferedImage grad, int[][] xGrad, int[][] yGrad) {
         BufferedImage nonMax = new BufferedImage(grad.getWidth(), grad.getHeight(), grad.getType());
         BufferedImage filtered = new BufferedImage(grad.getWidth(), grad.getHeight(), grad.getType());
-        int RGB_BLACK = Color.BLACK.getRGB();
         int RGB_WHITE = Color.WHITE.getRGB();
 
         for (int y = 0; y < grad.getHeight(); y++) {
@@ -293,9 +301,11 @@ public class MainWindow {
                 int lum = new Color(grad.getRGB(x, y)).getRed();
                 int aLum = 0;
                 int bLum = 0;
+                int extraLum = 0;
 
                 if (theta == 0) {
                     if (x - 1 >= 0) {
+                        extraLum = new Color(grad.getRGB(x-1, y)).getRed(); // West
                         aLum = new Color(nonMax.getRGB(x-1, y)).getRed(); // West
                     }
 
@@ -304,6 +314,7 @@ public class MainWindow {
                     }
                 } else if (theta == 45) { // 45 Degrees
                     if ((x+1 < grad.getWidth()) && (y-1 >= 0)) {
+                        extraLum = new Color(grad.getRGB(x+1, y-1)).getRed(); // NE
                         aLum = new Color(nonMax.getRGB(x+1, y-1)).getRed(); // NE
                     }
 
@@ -312,6 +323,7 @@ public class MainWindow {
                     }
                 } else if (theta == 90) { // 90 Degrees
                     if (y - 1 >= 0) {
+                        extraLum = new Color(grad.getRGB(x, y-1)).getRed(); // N
                         aLum = new Color(nonMax.getRGB(x, y-1)).getRed(); // N
                     }
 
@@ -320,6 +332,7 @@ public class MainWindow {
                     }
                 } else if (theta == 135) { // 135 degrees
                     if ((x-1 >= 0) && (y-1 >= 0)) {
+                        extraLum = new Color(grad.getRGB(x-1, y-1)).getRed(); // NW
                         aLum = new Color(nonMax.getRGB(x-1, y-1)).getRed(); // NW
                     }
 
@@ -328,11 +341,10 @@ public class MainWindow {
                     }
                 }
 
-                int low = 50;
-                int high = 125;
+                int low = 20;
+                int high = 80;
 
-                nonMax.setRGB(x, y, RGB_BLACK);
-                if ((lum > aLum) && (lum > bLum)) {
+                if ((lum > aLum) && (lum > bLum) && (lum >= extraLum)) {
                     nonMax.setRGB(x, y, RGB_WHITE);
                     if (lum >= high) {
                         filtered.setRGB(x, y, RGB_WHITE); // Strong edges
@@ -344,6 +356,71 @@ public class MainWindow {
         }
 
         return new BufferedImage[]{nonMax, filtered};
+    }
+
+    /**
+     * Hysteresis function used to fill in line segments where weak lines are.
+     * @param nmsImg BufferedImage after initial filtering, has strong and weak lines (strong = 255, weak = 120).
+     * @return BufferedImage after performing the hysteresis step.
+     */
+    private static BufferedImage Hysteresis(BufferedImage nmsImg) {
+        BufferedImage hysteresisImg = new BufferedImage(nmsImg.getWidth(), nmsImg.getHeight(), nmsImg.getType());
+        boolean[][] checkedCells = new boolean[nmsImg.getHeight()][nmsImg.getWidth()];
+
+        for (int y = 0; y < nmsImg.getHeight(); y++) {
+            for (int x = 0; x < nmsImg.getWidth(); x++) {
+                if (!checkedCells[y][x]) {
+                    int lum = new Color(nmsImg.getRGB(x, y)).getRed();
+                    if (lum == 255) {
+                        hysteresisImg.setRGB(x, y, Color.WHITE.getRGB());
+                        checkedCells[y][x] = true;
+                    } else if (lum == 120) {
+                        ArrayList<int[]> edge = new ArrayList<>();
+                        FollowLine(x, y, nmsImg, edge, checkedCells);
+                        if (edge.size() > 1 && edge.get(0)[0] == -1) {
+                            for (int i = 1; i < edge.size(); i++) {
+                                int[] xy = edge.get(i);
+                                if (xy[0] != -1) {
+                                    hysteresisImg.setRGB(xy[0], xy[1], Color.WHITE.getRGB());
+                                    nmsImg.setRGB(xy[0], xy[1], Color.CYAN.getRGB());
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return hysteresisImg;
+    }
+
+    /**
+     * Recursive grass-fire BLOB algorithm.
+     * @param x int of current x coordinate.
+     * @param y int of current y coordinate.
+     * @param img BufferedImage that has already been filtered to have strong and weak lines.
+     * @param edgeList ArrayList<int[]> of pixels in the extracted line. Value at index 0 determines if it should be considered.
+     * @param checked boolean[][] used to determine if a pixel has already been checked.
+     */
+    private static void FollowLine(int x, int y, BufferedImage img, ArrayList<int[]> edgeList, boolean[][] checked) {
+        int lum = new Color(img.getRGB(x, y)).getRed();
+        if (!checked[y][x]) {
+            checked[y][x] = true;
+            if (lum == 255) {
+                edgeList.add(0, new int[]{-1, 1});
+            } else if (lum == 120) {
+                edgeList.add(new int[]{x, y});
+                for (int i = -1; i <= 1; i++) {
+                    for (int j = -1; j <= 1; j++) {
+                        int xi = Math.min(img.getWidth(), Math.max(0, x+j));
+                        int yi = Math.min(img.getWidth(), Math.max(0, y+i));
+                        FollowLine(xi, yi, img, edgeList, checked);
+                    }
+                }
+            }
+        } else if (edgeList.get(0)[0] != -1 && lum == 255) {
+            edgeList.add(0, new int[]{-1, 1});
+        }
     }
 
     public MainWindow() {

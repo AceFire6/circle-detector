@@ -27,7 +27,7 @@
             <children>
               <grid id="7c565" binding="imageTab" layout-manager="BorderLayout" hgap="0" vgap="0">
                 <constraints>
-                  <tabbedpane title="Image"/>
+                  <tabbedpane title="Input"/>
                 </constraints>
                 <properties/>
                 <border type="none"/>
@@ -43,7 +43,7 @@
               </grid>
               <grid id="a2143" binding="grayscaleImageTab" layout-manager="BorderLayout" hgap="0" vgap="0">
                 <constraints>
-                  <tabbedpane title="Grayscale Image"/>
+                  <tabbedpane title="Grayscale"/>
                 </constraints>
                 <properties/>
                 <border type="none"/>
@@ -59,7 +59,7 @@
               </grid>
               <grid id="172cd" binding="blurredImageTab" layout-manager="BorderLayout" hgap="0" vgap="0">
                 <constraints>
-                  <tabbedpane title="Gaussian Blur Image"/>
+                  <tabbedpane title="Blurred"/>
                 </constraints>
                 <properties/>
                 <border type="none"/>
@@ -76,7 +76,7 @@
               </grid>
               <grid id="df58" binding="xGradientTab" layout-manager="BorderLayout" hgap="0" vgap="0">
                 <constraints>
-                  <tabbedpane title="X Gradient Image"/>
+                  <tabbedpane title="X Gradient"/>
                 </constraints>
                 <properties/>
                 <border type="none"/>
@@ -93,7 +93,7 @@
               </grid>
               <grid id="34d02" binding="yGradientTab" layout-manager="BorderLayout" hgap="0" vgap="0">
                 <constraints>
-                  <tabbedpane title="Y Gradient Image"/>
+                  <tabbedpane title="Y Gradient"/>
                 </constraints>
                 <properties/>
                 <border type="none"/>
@@ -110,7 +110,7 @@
               </grid>
               <grid id="ed30" binding="edgeImageTab" layout-manager="BorderLayout" hgap="0" vgap="0">
                 <constraints>
-                  <tabbedpane title="Edge Image"/>
+                  <tabbedpane title="Edges"/>
                 </constraints>
                 <properties/>
                 <border type="none"/>
@@ -126,7 +126,7 @@
               </grid>
               <grid id="43345" binding="nonMaxImageTab" layout-manager="BorderLayout" hgap="0" vgap="0">
                 <constraints>
-                  <tabbedpane title="NMS Image"/>
+                  <tabbedpane title="NMS"/>
                 </constraints>
                 <properties/>
                 <border type="none"/>
@@ -142,7 +142,7 @@
               </grid>
               <grid id="ce079" binding="filteredNMSTab" layout-manager="BorderLayout" hgap="0" vgap="0">
                 <constraints>
-                  <tabbedpane title="Filtered NMS Image"/>
+                  <tabbedpane title="Filtered NMS"/>
                 </constraints>
                 <properties/>
                 <border type="none"/>
@@ -156,9 +156,25 @@
                   </component>
                 </children>
               </grid>
+              <grid id="83b0f" binding="hysteresisImageTab" layout-manager="BorderLayout" hgap="0" vgap="0">
+                <constraints>
+                  <tabbedpane title="Hysteresis"/>
+                </constraints>
+                <properties/>
+                <border type="none"/>
+                <children>
+                  <component id="d8416" class="javax.swing.JLabel" binding="hysteresisImageLabel">
+                    <constraints border-constraint="Center"/>
+                    <properties>
+                      <horizontalAlignment value="0"/>
+                      <text value=""/>
+                    </properties>
+                  </component>
+                </children>
+              </grid>
               <grid id="4c971" binding="circleImageTab" layout-manager="BorderLayout" hgap="0" vgap="0">
                 <constraints>
-                  <tabbedpane title="Circle Image"/>
+                  <tabbedpane title="Hough Transform"/>
                 </constraints>
                 <properties/>
                 <border type="none"/>
