@@ -3,20 +3,21 @@ package com.jethro;
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import javax.imageio.ImageIO;
 
 
 public class MainWindow {
-    private JButton importImageButton;
-    private JButton saveTabImageButton;
-    private JButton detectCirclesButton;
-    private JButton runEdgeDetectionButton;
+    private JMenuItem openMenuItem;
+    private JMenuItem saveMenuItem;
 
     private JTabbedPane imageTabs;
     private JPanel circleImageTab;
@@ -36,12 +37,15 @@ public class MainWindow {
     private JLabel xGradientImageLabel;
     private JPanel yGradientTab;
     private JLabel yGradientImageLabel;
+    private JPanel nonMaxImageTab;
+    private JLabel nonMaxImageLabel;
 
     private BufferedImage baseImg;
     private BufferedImage grayscaleImg;
     private BufferedImage blurredImg;
     private BufferedImage binaryImg;
     private BufferedImage edgeImg;
+    private BufferedImage nonMaxImage;
     private BufferedImage circleImg;
 
     /**
@@ -58,7 +62,7 @@ public class MainWindow {
                 baseImg = ImageIO.read(chooser.getSelectedFile());
                 imageLabel.setIcon(new ImageIcon(baseImg));
             } catch (IOException ioe) {
-                String msg = "Failed to open imageLabel: " + chooser.getSelectedFile().getName() + "\n";
+                String msg = "Failed to openMenuItem imageLabel: " + chooser.getSelectedFile().getName() + "\n";
                 msg += "Error: " + ioe.getMessage();
                 JOptionPane.showMessageDialog(mainPanel, msg, "Image IO Error", JOptionPane.ERROR_MESSAGE);
             }
@@ -83,7 +87,7 @@ public class MainWindow {
                 String extension = fileParts[fileParts.length - 1];
                 ImageIO.write(img, extension, imgOut);
             } catch (IOException ioe) {
-                String msg = "Failed to open imageLabel: " + chooser.getSelectedFile().getName() + "\n";
+                String msg = "Failed to openMenuItem imageLabel: " + chooser.getSelectedFile().getName() + "\n";
                 msg += "Error: " + ioe.getMessage();
                 JOptionPane.showMessageDialog(mainPanel, msg, "Image IO Error", JOptionPane.ERROR_MESSAGE);
             }
@@ -139,6 +143,9 @@ public class MainWindow {
 
         edgeImg = gradients[2];
         edgeImageLabel.setIcon(new ImageIcon(edgeImg));
+
+        nonMaxImage = NonMaximalFilter(edgeImg, gradients[0], gradients[1]);
+        nonMaxImageLabel.setIcon(new ImageIcon(nonMaxImage));
     }
 
     /**
@@ -244,31 +251,120 @@ public class MainWindow {
         return new BufferedImage[]{xGradient, yGradient, edgeGradients};
     }
 
-    public MainWindow() {
-        // When clicked the button opens the file selector dialog and if the imageLabel is valid it sets it
-        importImageButton.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                ReadAndSetBaseImage();
-                ProcessImage();
+    /**
+     * Edge thinning technique. Filters edge based on local maxima. Also does threshold filtering after initial
+     * operation to determine strong and weak edges.
+     * @param grad BufferedImage grad is the combination of xGrad and yGrad.
+     * @param xGrad BufferedImage xGrad is the edge gradient image for the x axis.
+     * @param yGrad BufferedImage yGrad is the edge gradient image for the y axis.
+     * @return BufferedImage after edge thinning and determining strong and weak edges (Strong = White, Weak = Red).
+     */
+    private static BufferedImage NonMaximalFilter(BufferedImage grad, BufferedImage xGrad, BufferedImage yGrad) {
+        BufferedImage nonMax = new BufferedImage(grad.getWidth(), grad.getHeight(), grad.getType());
+        int RGB_BLACK = Color.BLACK.getRGB();
+        int RGB_WHITE = Color.WHITE.getRGB();
+
+        int[] counts = new int[4];
+
+        for (int y = 0; y < grad.getHeight(); y++) {
+            for (int x = 0; x < grad.getWidth(); x++) {
+                int xLum = new Color(xGrad.getRGB(x, y)).getRed();
+                int yLum = new Color(yGrad.getRGB(x, y)).getRed();
+                double theta = Math.atan2(yLum, xLum);
+                // Rounded to nearest 45 degrees
+                theta = Math.toDegrees(Math.round(theta / (Math.PI / 4)) * (Math.PI / 4));
+
+                int lum = new Color(grad.getRGB(x, y)).getRed();
+                int aLum = 0;
+                int bLum = 0;
+
+                if (theta == 0) {
+                    counts[0] += 1;
+                    if (x - 1 >= 0) {
+                        aLum = new Color(grad.getRGB(x-1, y)).getRed(); // West
+                    }
+
+                    if (x + 1 < grad.getWidth()) {
+                        bLum = new Color(grad.getRGB(x+1, y)).getRed(); // East
+                    }
+                } else if (theta == 45) { // 45 Degrees
+                    counts[1] += 1;
+                    if ((x+1 < grad.getWidth()) && (y-1 >= 0)) {
+                        aLum = new Color(grad.getRGB(x+1, y-1)).getRed(); // NE
+                    }
+
+                    if ((x-1 >= 0) && (y+1 < grad.getHeight())) {
+                        bLum = new Color(grad.getRGB(x-1, y+1)).getRed(); // SW
+                    }
+                } else if (theta == 90) { // 90 Degrees
+                    counts[2] += 1;
+                    if (y - 1 >= 0) {
+                        aLum = new Color(grad.getRGB(x, y-1)).getRed(); // N
+                    }
+
+                    if (y + 1 < grad.getHeight()) {
+                        bLum = new Color(grad.getRGB(x, y+1)).getRed(); // S
+                    }
+                } else if (theta == 135) { // 135 degrees
+                    counts[3] += 1;
+                    if ((x-1 >= 0) && (y-1 >= 0)) {
+                        aLum = new Color(grad.getRGB(x-1, y-1)).getRed(); // NW
+                    }
+
+                    if ((x+1 < grad.getWidth()) && (y+1 < grad.getHeight())) {
+                        bLum = new Color(grad.getRGB(x+1, y+1)).getRed(); // SE
+                    }
+                } else {
+                    System.out.println(theta);
+                }
+
+                int low = 50;
+                int high = 125;
+
+                nonMax.setRGB(x, y, RGB_BLACK);
+                if ((lum > aLum) && (lum > bLum)) {
+                    if (lum >= high) {
+                        nonMax.setRGB(x, y, RGB_WHITE); // Strong edges
+                    } else if (lum >= low) {
+                        nonMax.setRGB(x, y, new Color(120, 0, 0).getRGB()); // Weak edges
+                    }
+                }
             }
+        }
+
+        System.out.println(Arrays.toString(counts));
+        return nonMax;
+    }
+
+    public MainWindow() {
+        openMenuItem = new JMenuItem("Open");
+        saveMenuItem = new JMenuItem("Save");
+        // When clicked the button opens the file selector dialog and if the imageLabel is valid it sets it
+        openMenuItem.addActionListener(e -> {
+            ReadAndSetBaseImage();
+            ProcessImage();
         });
 
         // When clicked the button opens a dialog to enable saving of the currently viewed image
-        saveTabImageButton.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                SaveTabImage((JPanel) imageTabs.getSelectedComponent());
-            }
-        });
+        saveMenuItem.addActionListener(e -> SaveTabImage((JPanel) imageTabs.getSelectedComponent()));
     }
 
     public static void main(String[] args) {
         JFrame frame = new JFrame("Hough Detector");
-        frame.setContentPane(new MainWindow().mainPanel);
+
+        MainWindow mainWindow = new MainWindow();
+        // Menu Bar
+        JMenuBar menuBar = new JMenuBar();
+        JMenu jMenu = new JMenu("File");
+        jMenu.add(mainWindow.openMenuItem);
+        jMenu.add(mainWindow.saveMenuItem);
+        menuBar.add(jMenu);
+
+        frame.setJMenuBar(menuBar);
+        frame.setContentPane(mainWindow.mainPanel);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.pack();
-        frame.setMinimumSize(new Dimension(800, 600));
+        frame.setMinimumSize(new Dimension(900, 600));
         frame.setLocationRelativeTo(null); // Center the frame
         frame.setVisible(true);
     }
