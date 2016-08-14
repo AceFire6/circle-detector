@@ -39,6 +39,8 @@ public class MainWindow {
     private JLabel yGradientImageLabel;
     private JPanel nonMaxImageTab;
     private JLabel nonMaxImageLabel;
+    private JPanel filteredNMSTab;
+    private JLabel filteredNMSImageLabel;
 
     private BufferedImage baseImg;
     private BufferedImage grayscaleImg;
@@ -46,6 +48,7 @@ public class MainWindow {
     private BufferedImage binaryImg;
     private BufferedImage edgeImg;
     private BufferedImage nonMaxImage;
+    private BufferedImage filteredNMSImage;
     private BufferedImage circleImg;
 
     /**
@@ -148,8 +151,11 @@ public class MainWindow {
         edgeImg = gradients[2];
         edgeImageLabel.setIcon(new ImageIcon(edgeImg));
 
-        nonMaxImage = NonMaximalFilter(edgeImg, xGradValues, yGradValues);
+        BufferedImage[] NSMImages = NonMaximalFilter(edgeImg, xGradValues, yGradValues);
+        nonMaxImage = NSMImages[0];
         nonMaxImageLabel.setIcon(new ImageIcon(nonMaxImage));
+        filteredNMSImage = NSMImages[1];
+        filteredNMSImageLabel.setIcon(new ImageIcon(filteredNMSImage));
     }
 
     /**
@@ -267,10 +273,11 @@ public class MainWindow {
      * @param grad BufferedImage grad is the combination of xGrad and yGrad.
      * @param xGrad int[][] xGrad is the edge gradient values for the x axis.
      * @param yGrad int[][] yGrad is the edge gradient values for the y axis.
-     * @return BufferedImage after edge thinning and determining strong and weak edges (Strong = White, Weak = Red).
+     * @return BufferedImage[] after edge thinning and determining strong and weak edges (Strong = White, Weak = Red).
      */
-    private static BufferedImage NonMaximalFilter(BufferedImage grad, int[][] xGrad, int[][] yGrad) {
+    private static BufferedImage[] NonMaximalFilter(BufferedImage grad, int[][] xGrad, int[][] yGrad) {
         BufferedImage nonMax = new BufferedImage(grad.getWidth(), grad.getHeight(), grad.getType());
+        BufferedImage filtered = new BufferedImage(grad.getWidth(), grad.getHeight(), grad.getType());
         int RGB_BLACK = Color.BLACK.getRGB();
         int RGB_WHITE = Color.WHITE.getRGB();
 
@@ -326,16 +333,17 @@ public class MainWindow {
 
                 nonMax.setRGB(x, y, RGB_BLACK);
                 if ((lum > aLum) && (lum > bLum)) {
+                    nonMax.setRGB(x, y, RGB_WHITE);
                     if (lum >= high) {
-                        nonMax.setRGB(x, y, RGB_WHITE); // Strong edges
+                        filtered.setRGB(x, y, RGB_WHITE); // Strong edges
                     } else if (lum >= low) {
-                        nonMax.setRGB(x, y, new Color(120, 0, 0).getRGB()); // Weak edges
+                        filtered.setRGB(x, y, new Color(120, 0, 0).getRGB()); // Weak edges
                     }
                 }
             }
         }
 
-        return nonMax;
+        return new BufferedImage[]{nonMax, filtered};
     }
 
     public MainWindow() {
