@@ -206,6 +206,11 @@ public class MainWindow {
         return OneWayConvolve(horizontal, kernel, false);
     }
 
+    /**
+     * Sobel filters the input image
+     * @param img BufferedImage img input image, must be grayscale.
+     * @return BufferedImage[] array containing xGradient, yGradient and edgeGradient BufferedImages.
+     */
     private static BufferedImage[] SobelFilter(BufferedImage img) {
         int[][] filterX = new int[][]{{-1, 0, 1}, {-2, 0, 2}, {-1, 0, 1}};
         int[][] filterY = new int[][]{{-1, -2, -1}, {0, 0, 0}, {1, 2, 1}};
@@ -230,7 +235,7 @@ public class MainWindow {
                 xGradient.setRGB(x, y, new Color(xVal, xVal, xVal).getRGB());
                 yGradient.setRGB(x, y, new Color(yVal, yVal, yVal).getRGB());
 
-                int cG = (int) Math.ceil(Math.hypot(xVal, yVal));
+                int cG = (int) Math.ceil(Math.hypot(xVal, yVal));  // sqrt(xVal^2 + yVal^2)
                 cG = Math.min(255, Math.abs(cG));
                 edgeGradients.setRGB(x, y, new Color(cG, cG, cG).getRGB());
             }
