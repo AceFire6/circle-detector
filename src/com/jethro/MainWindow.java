@@ -137,14 +137,18 @@ public class MainWindow {
         blurredImg = GaussianBlur(grayscaleImg, 5);
         blurredImageLabel.setIcon(new ImageIcon(blurredImg));
 
-        BufferedImage[] gradients = SobelFilter(blurredImg);
+        int[][] xGradValues = new int[baseImg.getHeight()][baseImg.getWidth()];
+        int[][] yGradValues = new int[baseImg.getHeight()][baseImg.getWidth()];
+
+        BufferedImage[] gradients = SobelFilter(blurredImg, xGradValues, yGradValues);
+
         xGradientImageLabel.setIcon(new ImageIcon(gradients[0]));
         yGradientImageLabel.setIcon(new ImageIcon(gradients[1]));
 
         edgeImg = gradients[2];
         edgeImageLabel.setIcon(new ImageIcon(edgeImg));
 
-        nonMaxImage = NonMaximalFilter(edgeImg, gradients[0], gradients[1]);
+        nonMaxImage = NonMaximalFilter(edgeImg, xGradValues, yGradValues);
         nonMaxImageLabel.setIcon(new ImageIcon(nonMaxImage));
     }
 
@@ -216,9 +220,11 @@ public class MainWindow {
     /**
      * Sobel filters the input image
      * @param img BufferedImage img input image, must be grayscale.
+     * @param xGradValues int[][] to be filled with the actual values of the x gradient.
+     * @param yGradValues int[][] to be filled with the actual values of the y gradient.
      * @return BufferedImage[] array containing xGradient, yGradient and edgeGradient BufferedImages.
      */
-    private static BufferedImage[] SobelFilter(BufferedImage img) {
+    private static BufferedImage[] SobelFilter(BufferedImage img, int[][] xGradValues, int[][] yGradValues) {
         int[][] filterX = new int[][]{{-1, 0, 1}, {-2, 0, 2}, {-1, 0, 1}};
         int[][] filterY = new int[][]{{-1, -2, -1}, {0, 0, 0}, {1, 2, 1}};
 
@@ -237,6 +243,10 @@ public class MainWindow {
                         yVal += c * filterY[fi][fj];
                     }
                 }
+
+                xGradValues[y][x] = xVal;
+                yGradValues[y][x] = yVal;
+
                 xVal = Math.min(255, Math.abs(xVal));
                 yVal = Math.min(255, Math.abs(yVal));
                 xGradient.setRGB(x, y, new Color(xVal, xVal, xVal).getRGB());
@@ -255,67 +265,60 @@ public class MainWindow {
      * Edge thinning technique. Filters edge based on local maxima. Also does threshold filtering after initial
      * operation to determine strong and weak edges.
      * @param grad BufferedImage grad is the combination of xGrad and yGrad.
-     * @param xGrad BufferedImage xGrad is the edge gradient image for the x axis.
-     * @param yGrad BufferedImage yGrad is the edge gradient image for the y axis.
+     * @param xGrad int[][] xGrad is the edge gradient values for the x axis.
+     * @param yGrad int[][] yGrad is the edge gradient values for the y axis.
      * @return BufferedImage after edge thinning and determining strong and weak edges (Strong = White, Weak = Red).
      */
-    private static BufferedImage NonMaximalFilter(BufferedImage grad, BufferedImage xGrad, BufferedImage yGrad) {
+    private static BufferedImage NonMaximalFilter(BufferedImage grad, int[][] xGrad, int[][] yGrad) {
         BufferedImage nonMax = new BufferedImage(grad.getWidth(), grad.getHeight(), grad.getType());
         int RGB_BLACK = Color.BLACK.getRGB();
         int RGB_WHITE = Color.WHITE.getRGB();
 
-        int[] counts = new int[4];
-
         for (int y = 0; y < grad.getHeight(); y++) {
             for (int x = 0; x < grad.getWidth(); x++) {
-                int xLum = new Color(xGrad.getRGB(x, y)).getRed();
-                int yLum = new Color(yGrad.getRGB(x, y)).getRed();
-                double theta = Math.atan2(yLum, xLum);
+                int xLum = xGrad[y][x];
+                int yLum = yGrad[y][x];
+                double theta = Math.toDegrees(Math.atan2(yLum, xLum));
                 // Rounded to nearest 45 degrees
-                theta = Math.toDegrees(Math.round(theta / (Math.PI / 4)) * (Math.PI / 4));
+                theta = (Math.round(theta / 45) * 45) % 180;
+                theta = (theta >= 0) ? theta : 180 + theta;
 
                 int lum = new Color(grad.getRGB(x, y)).getRed();
                 int aLum = 0;
                 int bLum = 0;
 
                 if (theta == 0) {
-                    counts[0] += 1;
                     if (x - 1 >= 0) {
-                        aLum = new Color(grad.getRGB(x-1, y)).getRed(); // West
+                        aLum = new Color(nonMax.getRGB(x-1, y)).getRed(); // West
                     }
 
                     if (x + 1 < grad.getWidth()) {
                         bLum = new Color(grad.getRGB(x+1, y)).getRed(); // East
                     }
                 } else if (theta == 45) { // 45 Degrees
-                    counts[1] += 1;
                     if ((x+1 < grad.getWidth()) && (y-1 >= 0)) {
-                        aLum = new Color(grad.getRGB(x+1, y-1)).getRed(); // NE
+                        aLum = new Color(nonMax.getRGB(x+1, y-1)).getRed(); // NE
                     }
 
                     if ((x-1 >= 0) && (y+1 < grad.getHeight())) {
                         bLum = new Color(grad.getRGB(x-1, y+1)).getRed(); // SW
                     }
                 } else if (theta == 90) { // 90 Degrees
-                    counts[2] += 1;
                     if (y - 1 >= 0) {
-                        aLum = new Color(grad.getRGB(x, y-1)).getRed(); // N
+                        aLum = new Color(nonMax.getRGB(x, y-1)).getRed(); // N
                     }
 
                     if (y + 1 < grad.getHeight()) {
                         bLum = new Color(grad.getRGB(x, y+1)).getRed(); // S
                     }
                 } else if (theta == 135) { // 135 degrees
-                    counts[3] += 1;
                     if ((x-1 >= 0) && (y-1 >= 0)) {
-                        aLum = new Color(grad.getRGB(x-1, y-1)).getRed(); // NW
+                        aLum = new Color(nonMax.getRGB(x-1, y-1)).getRed(); // NW
                     }
 
                     if ((x+1 < grad.getWidth()) && (y+1 < grad.getHeight())) {
                         bLum = new Color(grad.getRGB(x+1, y+1)).getRed(); // SE
                     }
-                } else {
-                    System.out.println(theta);
                 }
 
                 int low = 50;
@@ -332,7 +335,6 @@ public class MainWindow {
             }
         }
 
-        System.out.println(Arrays.toString(counts));
         return nonMax;
     }
 
