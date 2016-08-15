@@ -313,13 +313,13 @@ public class MainWindow {
                         bLum = new Color(grad.getRGB(x+1, y)).getRed(); // East
                     }
                 } else if (theta == 45) { // 45 Degrees
-                    if ((x+1 < grad.getWidth()) && (y-1 >= 0)) {
-                        extraLum = new Color(grad.getRGB(x+1, y-1)).getRed(); // NE
-                        aLum = new Color(nonMax.getRGB(x+1, y-1)).getRed(); // NE
+                    if ((x-1 >= 0) && (y-1 >= 0)) {
+                        extraLum = new Color(grad.getRGB(x-1, y-1)).getRed(); // NW
+                        aLum = new Color(nonMax.getRGB(x-1, y-1)).getRed(); // NW
                     }
 
-                    if ((x-1 >= 0) && (y+1 < grad.getHeight())) {
-                        bLum = new Color(grad.getRGB(x-1, y+1)).getRed(); // SW
+                    if ((x+1 < grad.getWidth()) && (y+1 < grad.getHeight())) {
+                        bLum = new Color(grad.getRGB(x+1, y+1)).getRed(); // SE
                     }
                 } else if (theta == 90) { // 90 Degrees
                     if (y - 1 >= 0) {
@@ -331,13 +331,13 @@ public class MainWindow {
                         bLum = new Color(grad.getRGB(x, y+1)).getRed(); // S
                     }
                 } else if (theta == 135) { // 135 degrees
-                    if ((x-1 >= 0) && (y-1 >= 0)) {
-                        extraLum = new Color(grad.getRGB(x-1, y-1)).getRed(); // NW
-                        aLum = new Color(nonMax.getRGB(x-1, y-1)).getRed(); // NW
+                    if ((x+1 < grad.getWidth()) && (y-1 >= 0)) {
+                        extraLum = new Color(grad.getRGB(x+1, y-1)).getRed(); // NE
+                        aLum = new Color(nonMax.getRGB(x+1, y-1)).getRed(); // NE
                     }
 
-                    if ((x+1 < grad.getWidth()) && (y+1 < grad.getHeight())) {
-                        bLum = new Color(grad.getRGB(x+1, y+1)).getRed(); // SE
+                    if ((x-1 >= 0) && (y+1 < grad.getHeight())) {
+                        bLum = new Color(grad.getRGB(x-1, y+1)).getRed(); // SW
                     }
                 }
 
