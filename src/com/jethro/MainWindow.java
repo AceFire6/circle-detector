@@ -420,6 +420,12 @@ public class MainWindow {
         }
     }
 
+    private static void AddColor(int x, int y, int col, BufferedImage img) {
+        int rgb_col = new Color(img.getRGB(x, y)).getRed();
+        rgb_col = Math.min(255, rgb_col + col);
+        img.setRGB(x, y, new Color(rgb_col, rgb_col, rgb_col).getRGB());
+    }
+
     /**
      * Bressenham's Circle Drawing Algorithm as defined here:
      * http://www.gamedev.net/page/resources/_/technical/graphics-programming-and-theory/bresenhams-line-and-circle-algorithms-r767
@@ -428,20 +434,86 @@ public class MainWindow {
      * @param radius int radius of the circle.
      * @param img BufferedImage to draw the circle to.
      */
-    private static void DrawCircle(int centerX, int centerY, int radius, BufferedImage img) {
+    private static void DrawCircle(int centerX, int centerY, int radius, BufferedImage img, boolean additive) {
         int d = 3 - (2 * radius);
         int x = 0;
         int y = radius;
 
+        int col = 10 / radius;
+        int rgb_col = new Color(21, 160, 255).getRGB();
+
         while (x < y) {
-            img.setRGB(centerX + x, centerY + y, new Color(0, 161, 255).getRGB());
-            img.setRGB(centerX + x, centerY - y, new Color(0, 161, 255).getRGB());
-            img.setRGB(centerX - x, centerY + y, new Color(0, 161, 255).getRGB());
-            img.setRGB(centerX - x, centerY - y, new Color(0, 161, 255).getRGB());
-            img.setRGB(centerX + y, centerY + x, new Color(0, 161, 255).getRGB());
-            img.setRGB(centerX + y, centerY - x, new Color(0, 161, 255).getRGB());
-            img.setRGB(centerX - y, centerY + x, new Color(0, 161, 255).getRGB());
-            img.setRGB(centerX - y, centerY - x, new Color(0, 161, 255).getRGB());
+            if (centerX + x < img.getWidth()) {
+                if (centerY + y < img.getHeight()) {
+                    if (additive) {
+                        AddColor(centerX + x, centerY + y, col, img);
+                    } else {
+                        img.setRGB(centerX + x, centerY + y, rgb_col);
+                    }
+                }
+
+                if (centerY - y >= 0) {
+                    if (additive) {
+                        AddColor(centerX + x, centerY - y, col, img);
+                    } else {
+                        img.setRGB(centerX + x, centerY - y, rgb_col);
+                    }
+                }
+            }
+
+            if (centerX - x >= 0) {
+                if (centerY + y < img.getHeight()) {
+                    if (additive) {
+                        AddColor(centerX - x, centerY + y, col, img);
+                    } else {
+                        img.setRGB(centerX - x, centerY + y, rgb_col);
+                    }
+                }
+
+                if (centerY - y >= 0) {
+                    if (additive) {
+                        AddColor(centerX - x, centerY - y, col, img);
+                    } else {
+                        img.setRGB(centerX - x, centerY - y, rgb_col);
+                    }
+                }
+            }
+
+            if (centerX + y < img.getWidth()) {
+                if (centerY + x < img.getHeight()) {
+                    if (additive) {
+                        AddColor(centerX + y, centerY + x, col, img);
+                    } else {
+                        img.setRGB(centerX + y, centerY + x, rgb_col);
+                    }
+                }
+
+                if (centerY - x >= 0) {
+                    if (additive) {
+                        AddColor(centerX + y, centerY - x, col, img);
+                    } else {
+                        img.setRGB(centerX + y, centerY - x, rgb_col);
+                    }
+                }
+            }
+
+            if (centerX - y >= 0) {
+                if (centerY + x < img.getHeight()) {
+                    if (additive) {
+                        AddColor(centerX - y, centerY + x, col, img);
+                    } else {
+                        img.setRGB(centerX - y, centerY + x, rgb_col);
+                    }
+                }
+
+                if (centerY - x >= 0) {
+                    if (additive) {
+                        AddColor(centerX - y, centerY - x, col, img);
+                    } else {
+                        img.setRGB(centerX - y, centerY - x, rgb_col);
+                    }
+                }
+            }
 
             if (d < 0) {
                 d += (4 * x) + 6;
