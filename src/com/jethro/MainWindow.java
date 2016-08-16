@@ -339,7 +339,7 @@ public class MainWindow {
                 }
 
                 int low = 20;
-                int high = 80;
+                int high = 120;
 
                 if ((lum > aLum) && (lum > bLum) && (lum >= extraLum)) {
                     nonMax.setRGB(x, y, RGB_WHITE);
