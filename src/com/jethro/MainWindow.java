@@ -3,18 +3,11 @@ package com.jethro;
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 
 import java.awt.image.BufferedImage;
-import java.awt.image.BufferedImageFilter;
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
-import java.util.Arrays;
 import javax.imageio.ImageIO;
 
 
@@ -68,7 +61,11 @@ public class MainWindow {
         int returnVal = chooser.showOpenDialog(mainPanel);
         if(returnVal == JFileChooser.APPROVE_OPTION) {
             try {
-                baseImg = ImageIO.read(chooser.getSelectedFile());
+                BufferedImage inImg = ImageIO.read(chooser.getSelectedFile());
+                baseImg = new BufferedImage(inImg.getWidth(), inImg.getHeight(), BufferedImage.TYPE_INT_RGB);
+                baseImg.getGraphics().drawImage(inImg, 0, 0, null);
+                baseImg.getGraphics().dispose();
+
                 imageLabel.setIcon(new ImageIcon(baseImg));
             } catch (IOException ioe) {
                 String msg = "Failed to openMenuItem imageLabel: " + chooser.getSelectedFile().getName() + "\n";
