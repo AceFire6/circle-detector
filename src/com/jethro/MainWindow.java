@@ -442,7 +442,7 @@ public class MainWindow {
         int col = 10 / radius;
         int rgb_col = new Color(21, 160, 255).getRGB();
 
-        while (x < y) {
+        while (x <= y) {
             if (centerX + x < img.getWidth()) {
                 if (centerY + y < img.getHeight()) {
                     if (additive) {
