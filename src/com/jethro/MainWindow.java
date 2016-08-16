@@ -369,12 +369,9 @@ public class MainWindow {
 
         for (int y = 0; y < nmsImg.getHeight(); y++) {
             for (int x = 0; x < nmsImg.getWidth(); x++) {
-                if (!checkedCells[y][x]) {
-                    int lum = new Color(nmsImg.getRGB(x, y)).getRed();
-                    if (lum == 255) {
-                        hysteresisImg.setRGB(x, y, Color.WHITE.getRGB());
-                        checkedCells[y][x] = true;
-                    } else if (lum == 120) {
+                int lum = new Color(nmsImg.getRGB(x, y)).getRed();
+                if (lum != 255 && !checkedCells[y][x]) {
+                    if (lum == 120) {
                         ArrayList<int[]> edge = new ArrayList<>();
                         FollowLine(x, y, nmsImg, edge, checkedCells);
                         if (edge.size() > 1 && edge.get(0)[0] == -1) {
@@ -387,6 +384,9 @@ public class MainWindow {
                             }
                         }
                     }
+                } else if (lum == 255) {
+                    hysteresisImg.setRGB(x, y, Color.WHITE.getRGB());
+                    checkedCells[y][x] = true;
                 }
             }
         }
