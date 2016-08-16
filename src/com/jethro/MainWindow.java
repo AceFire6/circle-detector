@@ -16,7 +16,7 @@ public class MainWindow {
     private JMenuItem saveMenuItem;
 
     private JTabbedPane imageTabs;
-    private JPanel circleImageTab;
+    private JPanel houghImageTab;
     private JPanel edgeImageTab;
     private JPanel imageTab;
     private JPanel tabPanel;
@@ -24,7 +24,7 @@ public class MainWindow {
 
     private JLabel imageLabel;
     private JLabel edgeImageLabel;
-    private JLabel circleImageLabel;
+    private JLabel houghImageLabel;
     private JPanel grayscaleImageTab;
     private JLabel grayscaleImageLabel;
     private JPanel blurredImageTab;
@@ -48,7 +48,7 @@ public class MainWindow {
     private BufferedImage nonMaxImage;
     private BufferedImage filteredNMSImage;
     private BufferedImage hysteresisImage;
-    private BufferedImage circleImg;
+    private BufferedImage houghImage;
 
     /**
      * Loads and sets the base image.

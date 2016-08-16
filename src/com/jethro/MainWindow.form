@@ -172,14 +172,14 @@
                   </component>
                 </children>
               </grid>
-              <grid id="4c971" binding="circleImageTab" layout-manager="BorderLayout" hgap="0" vgap="0">
+              <grid id="4c971" binding="houghImageTab" layout-manager="BorderLayout" hgap="0" vgap="0">
                 <constraints>
                   <tabbedpane title="Hough Transform"/>
                 </constraints>
                 <properties/>
                 <border type="none"/>
                 <children>
-                  <component id="e4e60" class="javax.swing.JLabel" binding="circleImageLabel">
+                  <component id="e4e60" class="javax.swing.JLabel" binding="houghImageLabel">
                     <constraints border-constraint="Center"/>
                     <properties>
                       <horizontalAlignment value="0"/>
