@@ -423,6 +423,39 @@ public class MainWindow {
         }
     }
 
+    /**
+     * Bressenham's Circle Drawing Algorithm as defined here:
+     * http://www.gamedev.net/page/resources/_/technical/graphics-programming-and-theory/bresenhams-line-and-circle-algorithms-r767
+     * @param centerX int x pixel center of the circle.
+     * @param centerY int y pixel center of the circle.
+     * @param radius int radius of the circle.
+     * @param img BufferedImage to draw the circle to.
+     */
+    private static void DrawCircle(int centerX, int centerY, int radius, BufferedImage img) {
+        int d = 3 - (2 * radius);
+        int x = 0;
+        int y = radius;
+
+        while (x < y) {
+            img.setRGB(centerX + x, centerY + y, new Color(0, 161, 255).getRGB());
+            img.setRGB(centerX + x, centerY - y, new Color(0, 161, 255).getRGB());
+            img.setRGB(centerX - x, centerY + y, new Color(0, 161, 255).getRGB());
+            img.setRGB(centerX - x, centerY - y, new Color(0, 161, 255).getRGB());
+            img.setRGB(centerX + y, centerY + x, new Color(0, 161, 255).getRGB());
+            img.setRGB(centerX + y, centerY - x, new Color(0, 161, 255).getRGB());
+            img.setRGB(centerX - y, centerY + x, new Color(0, 161, 255).getRGB());
+            img.setRGB(centerX - y, centerY - x, new Color(0, 161, 255).getRGB());
+
+            if (d < 0) {
+                d += (4 * x) + 6;
+            } else {
+                d += 4 * (x - y) + 10;
+                y--;
+            }
+            x++;
+        }
+    }
+
     public MainWindow() {
         openMenuItem = new JMenuItem("Open");
         saveMenuItem = new JMenuItem("Save");
