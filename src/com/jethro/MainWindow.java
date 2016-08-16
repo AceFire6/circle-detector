@@ -410,7 +410,7 @@ public class MainWindow {
                 for (int i = -1; i <= 1; i++) {
                     for (int j = -1; j <= 1; j++) {
                         int xi = Math.min(img.getWidth(), Math.max(0, x+j));
-                        int yi = Math.min(img.getWidth(), Math.max(0, y+i));
+                        int yi = Math.min(img.getHeight(), Math.max(0, y+i));
                         FollowLine(xi, yi, img, edgeList, checked);
                     }
                 }
