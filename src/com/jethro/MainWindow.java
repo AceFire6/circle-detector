@@ -44,6 +44,7 @@ public class MainWindow {
 
     private BufferedImage baseImg;
     private String baseImgName;
+    private boolean GUI = true;
 
     /**
      * Loads and sets the base image.
@@ -72,7 +73,9 @@ public class MainWindow {
         baseImg.getGraphics().drawImage(inImg, 0, 0, null);
         baseImg.getGraphics().dispose();
 
-        imageLabel.setIcon(new ImageIcon(baseImg));
+        if (GUI) {
+            imageLabel.setIcon(new ImageIcon(baseImg));
+        }
     }
 
     /**
@@ -142,37 +145,36 @@ public class MainWindow {
      */
     private void ProcessImage(boolean writeOut) {
         BufferedImage grayscaleImg = ImageToGrayscale(baseImg);
-        grayscaleImageLabel.setIcon(new ImageIcon(grayscaleImg));
-
         BufferedImage blurredImg = GaussianBlur(grayscaleImg, 5);
-        blurredImageLabel.setIcon(new ImageIcon(blurredImg));
 
         int[][] xGradValues = new int[baseImg.getHeight()][baseImg.getWidth()];
         int[][] yGradValues = new int[baseImg.getHeight()][baseImg.getWidth()];
 
         BufferedImage[] gradients = SobelFilter(blurredImg, xGradValues, yGradValues);
 
-        xGradientImageLabel.setIcon(new ImageIcon(gradients[0]));
-        yGradientImageLabel.setIcon(new ImageIcon(gradients[1]));
-
         BufferedImage edgeImg = gradients[2];
-        edgeImageLabel.setIcon(new ImageIcon(edgeImg));
 
         BufferedImage[] NSMImages = NonMaximalFilter(edgeImg, xGradValues, yGradValues);
         BufferedImage nonMaxImage = NSMImages[0];
-        nonMaxImageLabel.setIcon(new ImageIcon(nonMaxImage));
         BufferedImage filteredNMSImage = NSMImages[1];
-        filteredNMSImageLabel.setIcon(new ImageIcon(filteredNMSImage));
-
         BufferedImage hysteresisImage = Hysteresis(filteredNMSImage);
-        hysteresisImageLabel.setIcon(new ImageIcon(hysteresisImage));
 
         BufferedImage[] houghImages = HoughCircleDetection(hysteresisImage, xGradValues, yGradValues);
         BufferedImage houghImage = houghImages[0];
-        houghImageLabel.setIcon(new ImageIcon(houghImage));
-
         BufferedImage foundCircleImage = houghImages[1];
-        circleImageLabel.setIcon(new ImageIcon(foundCircleImage));
+
+        if (GUI) {
+            grayscaleImageLabel.setIcon(new ImageIcon(grayscaleImg));
+            blurredImageLabel.setIcon(new ImageIcon(blurredImg));
+            xGradientImageLabel.setIcon(new ImageIcon(gradients[0]));
+            yGradientImageLabel.setIcon(new ImageIcon(gradients[1]));
+            edgeImageLabel.setIcon(new ImageIcon(edgeImg));
+            nonMaxImageLabel.setIcon(new ImageIcon(nonMaxImage));
+            filteredNMSImageLabel.setIcon(new ImageIcon(filteredNMSImage));
+            hysteresisImageLabel.setIcon(new ImageIcon(hysteresisImage));
+            houghImageLabel.setIcon(new ImageIcon(houghImage));
+            circleImageLabel.setIcon(new ImageIcon(foundCircleImage));
+        }
 
         if (writeOut) {
             try {
@@ -742,6 +744,7 @@ public class MainWindow {
         MainWindow mainWindow = new MainWindow();
 
         if (args.length > 0) {
+            mainWindow.GUI = false;
             File inf = new File(args[0]);
             try {
                 mainWindow.SetBaseImage(inf);
