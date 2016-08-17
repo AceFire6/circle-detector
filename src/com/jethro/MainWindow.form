@@ -188,6 +188,22 @@
                   </component>
                 </children>
               </grid>
+              <grid id="4c39e" binding="foundCircleImageTab" layout-manager="BorderLayout" hgap="0" vgap="0">
+                <constraints>
+                  <tabbedpane title="Found Circles"/>
+                </constraints>
+                <properties/>
+                <border type="none"/>
+                <children>
+                  <component id="fcd25" class="javax.swing.JLabel" binding="circleImageLabel">
+                    <constraints border-constraint="Center"/>
+                    <properties>
+                      <horizontalAlignment value="0"/>
+                      <text value=""/>
+                    </properties>
+                  </component>
+                </children>
+              </grid>
             </children>
           </tabbedpane>
         </children>

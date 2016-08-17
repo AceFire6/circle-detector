@@ -39,16 +39,10 @@ public class MainWindow {
     private JLabel filteredNMSImageLabel;
     private JPanel hysteresisImageTab;
     private JLabel hysteresisImageLabel;
+    private JPanel foundCircleImageTab;
+    private JLabel circleImageLabel;
 
     private BufferedImage baseImg;
-    private BufferedImage grayscaleImg;
-    private BufferedImage blurredImg;
-    private BufferedImage binaryImg;
-    private BufferedImage edgeImg;
-    private BufferedImage nonMaxImage;
-    private BufferedImage filteredNMSImage;
-    private BufferedImage hysteresisImage;
-    private BufferedImage houghImage;
 
     /**
      * Loads and sets the base image.
@@ -137,10 +131,10 @@ public class MainWindow {
      * Generates multiple images that are to be displayed on the screen when they are generated.
      */
     private void ProcessImage() {
-        grayscaleImg = ImageToGrayscale(baseImg);
+        BufferedImage grayscaleImg = ImageToGrayscale(baseImg);
         grayscaleImageLabel.setIcon(new ImageIcon(grayscaleImg));
 
-        blurredImg = GaussianBlur(grayscaleImg, 5);
+        BufferedImage blurredImg = GaussianBlur(grayscaleImg, 5);
         blurredImageLabel.setIcon(new ImageIcon(blurredImg));
 
         int[][] xGradValues = new int[baseImg.getHeight()][baseImg.getWidth()];
@@ -151,20 +145,24 @@ public class MainWindow {
         xGradientImageLabel.setIcon(new ImageIcon(gradients[0]));
         yGradientImageLabel.setIcon(new ImageIcon(gradients[1]));
 
-        edgeImg = gradients[2];
+        BufferedImage edgeImg = gradients[2];
         edgeImageLabel.setIcon(new ImageIcon(edgeImg));
 
         BufferedImage[] NSMImages = NonMaximalFilter(edgeImg, xGradValues, yGradValues);
-        nonMaxImage = NSMImages[0];
+        BufferedImage nonMaxImage = NSMImages[0];
         nonMaxImageLabel.setIcon(new ImageIcon(nonMaxImage));
-        filteredNMSImage = NSMImages[1];
+        BufferedImage filteredNMSImage = NSMImages[1];
         filteredNMSImageLabel.setIcon(new ImageIcon(filteredNMSImage));
 
-        hysteresisImage = Hysteresis(filteredNMSImage);
+        BufferedImage hysteresisImage = Hysteresis(filteredNMSImage);
         hysteresisImageLabel.setIcon(new ImageIcon(hysteresisImage));
 
-        houghImage = HoughCircleDetection(hysteresisImage, xGradValues, yGradValues);
+        BufferedImage[] houghImages = HoughCircleDetection(hysteresisImage, xGradValues, yGradValues);
+        BufferedImage houghImage = houghImages[0];
         houghImageLabel.setIcon(new ImageIcon(houghImage));
+
+        BufferedImage foundCircleImage = houghImages[1];
+        circleImageLabel.setIcon(new ImageIcon(foundCircleImage));
     }
 
     /**
@@ -431,6 +429,121 @@ public class MainWindow {
      * @param radius int radius of the circle.
      * @param img BufferedImage to draw the circle to.
      */
+    private static int DrawCircle(int centerX, int centerY, int radius, boolean compare, BufferedImage img) {
+        int d = 3 - (2 * radius);
+        int x = 0;
+        int y = radius;
+
+        int rgb_col = new Color(21, 160, 255).getRGB();
+        int matches = 0;
+
+        while (x <= y) {
+            if (centerX + x < img.getWidth()) {
+                if (centerY + y < img.getHeight()) {
+                    if (compare) {
+                        int currLum = new Color(img.getRGB(centerX + x, centerY + y)).getRed();
+                        if (currLum == 255) {
+                            matches++;
+                        }
+                    } else {
+                        img.setRGB(centerX + x, centerY + y, rgb_col);
+                    }
+                }
+
+                if (centerY - y >= 0) {
+                    if (compare) {
+                        int currLum = new Color(img.getRGB(centerX + x, centerY - y)).getRed();
+                        if (currLum == 255) {
+                            matches++;
+                        }
+                    } else {
+                        img.setRGB(centerX + x, centerY - y, rgb_col);
+                    }
+                }
+            }
+
+            if (centerX - x >= 0) {
+                if (centerY + y < img.getHeight()) {
+                    if (compare) {
+                        int currLum = new Color(img.getRGB(centerX - x, centerY + y)).getRed();
+                        if (currLum == 255) {
+                            matches++;
+                        }
+                    } else {
+                        img.setRGB(centerX - x, centerY + y, rgb_col);
+                    }
+                }
+
+                if (centerY - y >= 0) {
+                    if (compare) {
+                        int currLum = new Color(img.getRGB(centerX - x, centerY - y)).getRed();
+                        if (currLum == 255) {
+                            matches++;
+                        }
+                    } else {
+                        img.setRGB(centerX - x, centerY - y, rgb_col);
+                    }
+                }
+            }
+
+            if (centerX + y < img.getWidth()) {
+                if (centerY + x < img.getHeight()) {
+                    if (compare) {
+                        int currLum = new Color(img.getRGB(centerX + y, centerY + x)).getRed();
+                        if (currLum == 255) {
+                            matches++;
+                        }
+                    } else {
+                        img.setRGB(centerX + y, centerY + x, rgb_col);
+                    }
+                }
+
+                if (centerY - x >= 0) {
+                    if (compare) {
+                        int currLum = new Color(img.getRGB(centerX + y, centerY - x)).getRed();
+                        if (currLum == 255) {
+                            matches++;
+                        }
+                    } else {
+                        img.setRGB(centerX + y, centerY - x, rgb_col);
+                    }
+                }
+            }
+
+            if (centerX - y >= 0) {
+                if (centerY + x < img.getHeight()) {
+                    if (compare) {
+                        int currLum = new Color(img.getRGB(centerX - y, centerY + x)).getRed();
+                        if (currLum == 255) {
+                            matches++;
+                        }
+                    } else {
+                        img.setRGB(centerX - y, centerY + x, rgb_col);
+                    }
+                }
+
+                if (centerY - x >= 0) {
+                    if (compare) {
+                        int currLum = new Color(img.getRGB(centerX - y, centerY - x)).getRed();
+                        if (currLum == 255) {
+                            matches++;
+                        }
+                    } else {
+                        img.setRGB(centerX - y, centerY - x, rgb_col);
+                    }
+                }
+            }
+
+            if (d < 0) {
+                d += (4 * x) + 6;
+            } else {
+                d += 4 * (x - y) + 10;
+                y--;
+            }
+            x++;
+        }
+        return matches;
+    }
 
     /**
      * Generalized Bresenham's Line Drawing Algorithm from:
@@ -482,14 +595,18 @@ public class MainWindow {
         }
     }
 
-    private static BufferedImage HoughCircleDetection(BufferedImage img, int[][] xGrad, int[][] yGrad) {
+    private static BufferedImage[] HoughCircleDetection(BufferedImage img, int[][] xGrad, int[][] yGrad) {
         int[][] accum = new int[img.getHeight()][img.getWidth()];
-        BufferedImage circles = new BufferedImage(img.getWidth(), img.getHeight(), img.getType());
+        ArrayList<int[]> centers = new ArrayList<>();
+        BufferedImage lines = new BufferedImage(img.getWidth(), img.getHeight(), img.getType());
+        BufferedImage foundCircles = new BufferedImage(img.getWidth(), img.getHeight(), img.getType());
 
         int length = (int) Math.round(Math.hypot(img.getWidth(), img.getHeight()));
 
         for (int y = 0; y < img.getHeight(); y++) {
             for (int x = 0; x < img.getWidth(); x++) {
+                foundCircles.setRGB(x, y, img.getRGB(x, y));
+
                 int lum = new Color(img.getRGB(x, y)).getRed();
                 if (lum == 255) {
                     int xLum = xGrad[y][x];
@@ -523,11 +640,57 @@ public class MainWindow {
         for (int y = 0; y < img.getHeight(); y++) {
             for (int x = 0; x < img.getWidth(); x++) {
                 int lum = Math.round((255 * (accum[y][x] - minVal)) / ((float) (maxVal - minVal)));
-                circles.setRGB(x, y, new Color(lum, lum, lum).getRGB());
+                lines.setRGB(x, y, new Color(lum, lum, lum).getRGB());
+
+                boolean bigger = true;
+                for (int i = -5; i <= 5; i++) {
+                    for (int j = -5; j <= 5; j++) {
+                        int xVal = x + j;
+                        int yVal = y + i;
+
+                        if ((xVal >= 0 && xVal < img.getWidth()) && (yVal >= 0 && yVal < img.getHeight())) {
+                            if (accum[y][x] < accum[yVal][xVal]) {
+                                bigger = false;
+                            }
+                        }
+                    }
+                }
+
+                if (bigger && (accum[y][x] > (maxVal * 0.2))) {
+                    centers.add(new int[]{x, y});
+                    lines.setRGB(x, y, Color.CYAN.getRGB());
+                }
             }
         }
 
-        return circles;
+        int biggestRadius = Math.min(200, length / 2);
+        int[] bestRadii = new int[centers.size()];
+        int[] bestRadiiScore = new int[centers.size()];
+        int maxRScore = 0;
+
+        for (int c = 0; c < centers.size(); c++) {
+            int[] center = centers.get(c);
+            for (int radius = 1; radius < biggestRadius; radius++) {
+                int matches = Math.round((2 * DrawCircle(center[0], center[1], radius, true, foundCircles)) / (float)radius);
+                if (bestRadiiScore[c] < matches) {
+                    bestRadii[c] = radius;
+                    bestRadiiScore[c] = matches;
+                }
+            }
+            if (bestRadiiScore[c] > maxRScore) {
+                maxRScore = bestRadiiScore[c];
+            }
+        }
+
+
+        for (int i = 0; i < bestRadii.length; i++) {
+            if (bestRadiiScore[i] > (0.2 * maxRScore)) {
+                int[] center = centers.get(i);
+                DrawCircle(center[0], center[1], bestRadii[i], false, foundCircles);
+            }
+        }
+
+        return new BufferedImage[]{lines, foundCircles};
     }
 
     public MainWindow() {
