@@ -43,6 +43,7 @@ public class MainWindow {
     private JLabel circleImageLabel;
 
     private BufferedImage baseImg;
+    private String baseImgName;
 
     /**
      * Loads and sets the base image.
@@ -55,18 +56,23 @@ public class MainWindow {
         int returnVal = chooser.showOpenDialog(mainPanel);
         if(returnVal == JFileChooser.APPROVE_OPTION) {
             try {
-                BufferedImage inImg = ImageIO.read(chooser.getSelectedFile());
-                baseImg = new BufferedImage(inImg.getWidth(), inImg.getHeight(), BufferedImage.TYPE_INT_RGB);
-                baseImg.getGraphics().drawImage(inImg, 0, 0, null);
-                baseImg.getGraphics().dispose();
-
-                imageLabel.setIcon(new ImageIcon(baseImg));
+                SetBaseImage(chooser.getSelectedFile());
             } catch (IOException ioe) {
                 String msg = "Failed to openMenuItem imageLabel: " + chooser.getSelectedFile().getName() + "\n";
                 msg += "Error: " + ioe.getMessage();
                 JOptionPane.showMessageDialog(mainPanel, msg, "Image IO Error", JOptionPane.ERROR_MESSAGE);
             }
         }
+    }
+
+    private void SetBaseImage(File f) throws IOException {
+        BufferedImage inImg = ImageIO.read(f);
+        baseImgName = f.getName();
+        baseImg = new BufferedImage(inImg.getWidth(), inImg.getHeight(), BufferedImage.TYPE_INT_RGB);
+        baseImg.getGraphics().drawImage(inImg, 0, 0, null);
+        baseImg.getGraphics().dispose();
+
+        imageLabel.setIcon(new ImageIcon(baseImg));
     }
 
     /**
@@ -82,16 +88,20 @@ public class MainWindow {
         if(returnVal == JFileChooser.APPROVE_OPTION) {
             try {
                 BufferedImage img = (BufferedImage) ((ImageIcon)((JLabel)tab.getComponent(0)).getIcon()).getImage();
-                File imgOut = chooser.getSelectedFile();
-                String[] fileParts = imgOut.getName().split("\\.");
-                String extension = fileParts[fileParts.length - 1];
-                ImageIO.write(img, extension, imgOut);
+                SaveImage(img, chooser.getSelectedFile().getName());
             } catch (IOException ioe) {
                 String msg = "Failed to openMenuItem imageLabel: " + chooser.getSelectedFile().getName() + "\n";
                 msg += "Error: " + ioe.getMessage();
                 JOptionPane.showMessageDialog(mainPanel, msg, "Image IO Error", JOptionPane.ERROR_MESSAGE);
             }
         }
+    }
+
+    private void SaveImage(BufferedImage img, String outName) throws IOException {
+        File imgOut = new File(outName);
+        String[] fileParts = imgOut.getName().split("\\.");
+        String extension = fileParts[fileParts.length - 1];
+        ImageIO.write(img, extension, imgOut);
     }
 
     /**
@@ -130,7 +140,7 @@ public class MainWindow {
      * Do all required steps to get the hough transform to the image.
      * Generates multiple images that are to be displayed on the screen when they are generated.
      */
-    private void ProcessImage() {
+    private void ProcessImage(boolean writeOut) {
         BufferedImage grayscaleImg = ImageToGrayscale(baseImg);
         grayscaleImageLabel.setIcon(new ImageIcon(grayscaleImg));
 
@@ -163,6 +173,28 @@ public class MainWindow {
 
         BufferedImage foundCircleImage = houghImages[1];
         circleImageLabel.setIcon(new ImageIcon(foundCircleImage));
+
+        if (writeOut) {
+            try {
+                SaveImage(grayscaleImg, ToPath("grayscale.png"));
+                SaveImage(blurredImg, ToPath("blurred.png"));
+                SaveImage(gradients[0], ToPath("xgradient.png"));
+                SaveImage(gradients[1], ToPath("ygradient.png"));
+                SaveImage(edgeImg, ToPath("sobel-edges.png"));
+                SaveImage(nonMaxImage, ToPath("non-max-edges.png"));
+                SaveImage(filteredNMSImage, ToPath("non-maxfiltered-edges.png"));
+                SaveImage(hysteresisImage, ToPath("hysteresis.png"));
+                SaveImage(houghImage, ToPath("hough-lines.png"));
+                SaveImage(foundCircleImage, ToPath("foundCircles.png"));
+            } catch (IOException e) {
+                System.out.println("Failed to write out an image");
+                System.exit(0);
+            }
+        }
+    }
+
+    private String ToPath(String file) {
+        return baseImgName.split("\\.")[0] + "-" + file;
     }
 
     /**
@@ -699,7 +731,7 @@ public class MainWindow {
         // When clicked the button opens the file selector dialog and if the imageLabel is valid it sets it
         openMenuItem.addActionListener(e -> {
             ReadAndSetBaseImage();
-            ProcessImage();
+            ProcessImage(false);
         });
 
         // When clicked the button opens a dialog to enable saving of the currently viewed image
@@ -707,22 +739,34 @@ public class MainWindow {
     }
 
     public static void main(String[] args) {
-        JFrame frame = new JFrame("Hough Detector");
-
         MainWindow mainWindow = new MainWindow();
-        // Menu Bar
-        JMenuBar menuBar = new JMenuBar();
-        JMenu jMenu = new JMenu("File");
-        jMenu.add(mainWindow.openMenuItem);
-        jMenu.add(mainWindow.saveMenuItem);
-        menuBar.add(jMenu);
 
-        frame.setJMenuBar(menuBar);
-        frame.setContentPane(mainWindow.mainPanel);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.pack();
-        frame.setMinimumSize(new Dimension(900, 600));
-        frame.setLocationRelativeTo(null); // Center the frame
-        frame.setVisible(true);
+        if (args.length > 0) {
+            File inf = new File(args[0]);
+            try {
+                mainWindow.SetBaseImage(inf);
+            } catch (IOException e) {
+                System.out.println("Invalid file specified: " + args[0]);
+                System.exit(0);
+            }
+            mainWindow.ProcessImage(true);
+        } else {
+            JFrame frame = new JFrame("Hough Detector");
+
+            // Menu Bar
+            JMenuBar menuBar = new JMenuBar();
+            JMenu jMenu = new JMenu("File");
+            jMenu.add(mainWindow.openMenuItem);
+            jMenu.add(mainWindow.saveMenuItem);
+            menuBar.add(jMenu);
+
+            frame.setJMenuBar(menuBar);
+            frame.setContentPane(mainWindow.mainPanel);
+            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            frame.pack();
+            frame.setMinimumSize(new Dimension(900, 600));
+            frame.setLocationRelativeTo(null); // Center the frame
+            frame.setVisible(true);
+        }
     }
 }
