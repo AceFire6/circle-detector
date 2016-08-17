@@ -162,6 +162,9 @@ public class MainWindow {
 
         hysteresisImage = Hysteresis(filteredNMSImage);
         hysteresisImageLabel.setIcon(new ImageIcon(hysteresisImage));
+
+        houghImage = HoughCircleDetection(hysteresisImage, xGradValues, yGradValues);
+        houghImageLabel.setIcon(new ImageIcon(houghImage));
     }
 
     /**
@@ -420,12 +423,6 @@ public class MainWindow {
         }
     }
 
-    private static void AddColor(int x, int y, int col, BufferedImage img) {
-        int rgb_col = new Color(img.getRGB(x, y)).getRed();
-        rgb_col = Math.min(255, rgb_col + col);
-        img.setRGB(x, y, new Color(rgb_col, rgb_col, rgb_col).getRGB());
-    }
-
     /**
      * Bressenham's Circle Drawing Algorithm as defined here:
      * http://www.gamedev.net/page/resources/_/technical/graphics-programming-and-theory/bresenhams-line-and-circle-algorithms-r767
@@ -434,95 +431,103 @@ public class MainWindow {
      * @param radius int radius of the circle.
      * @param img BufferedImage to draw the circle to.
      */
-    private static void DrawCircle(int centerX, int centerY, int radius, BufferedImage img, boolean additive) {
-        int d = 3 - (2 * radius);
-        int x = 0;
-        int y = radius;
 
-        int col = 10 / radius;
-        int rgb_col = new Color(21, 160, 255).getRGB();
+    /**
+     * Generalized Bresenham's Line Drawing Algorithm from:
+     * https://www.cs.umd.edu/class/fall2003/cmsc427/bresenham.html
+     * @param x1 int start x coord.
+     * @param y1 int start y coord.
+     * @param x2 int end x coord.
+     * @param y2 int end y coord.
+     * @param accum
+     */
+    private static void DrawLine(int x1, int y1, int x2, int y2, int[][] accum) {
+        int deltaX = Math.abs(x2 - x1);
+        int deltaY = Math.abs(y2 - y1);
 
-        while (x <= y) {
-            if (centerX + x < img.getWidth()) {
-                if (centerY + y < img.getHeight()) {
-                    if (additive) {
-                        AddColor(centerX + x, centerY + y, col, img);
-                    } else {
-                        img.setRGB(centerX + x, centerY + y, rgb_col);
-                    }
-                }
+        int s1 = ((x2 - x1) > 0) ? 1 : (deltaX > 0) ? -1 : 0;
+        int s2 = ((y2 - y1) > 0) ? 1 : (deltaY > 0) ? -1 : 0;
 
-                if (centerY - y >= 0) {
-                    if (additive) {
-                        AddColor(centerX + x, centerY - y, col, img);
-                    } else {
-                        img.setRGB(centerX + x, centerY - y, rgb_col);
-                    }
-                }
-            }
+        boolean swap = false;
 
-            if (centerX - x >= 0) {
-                if (centerY + y < img.getHeight()) {
-                    if (additive) {
-                        AddColor(centerX - x, centerY + y, col, img);
-                    } else {
-                        img.setRGB(centerX - x, centerY + y, rgb_col);
-                    }
-                }
-
-                if (centerY - y >= 0) {
-                    if (additive) {
-                        AddColor(centerX - x, centerY - y, col, img);
-                    } else {
-                        img.setRGB(centerX - x, centerY - y, rgb_col);
-                    }
-                }
-            }
-
-            if (centerX + y < img.getWidth()) {
-                if (centerY + x < img.getHeight()) {
-                    if (additive) {
-                        AddColor(centerX + y, centerY + x, col, img);
-                    } else {
-                        img.setRGB(centerX + y, centerY + x, rgb_col);
-                    }
-                }
-
-                if (centerY - x >= 0) {
-                    if (additive) {
-                        AddColor(centerX + y, centerY - x, col, img);
-                    } else {
-                        img.setRGB(centerX + y, centerY - x, rgb_col);
-                    }
-                }
-            }
-
-            if (centerX - y >= 0) {
-                if (centerY + x < img.getHeight()) {
-                    if (additive) {
-                        AddColor(centerX - y, centerY + x, col, img);
-                    } else {
-                        img.setRGB(centerX - y, centerY + x, rgb_col);
-                    }
-                }
-
-                if (centerY - x >= 0) {
-                    if (additive) {
-                        AddColor(centerX - y, centerY - x, col, img);
-                    } else {
-                        img.setRGB(centerX - y, centerY - x, rgb_col);
-                    }
-                }
-            }
-
-            if (d < 0) {
-                d += (4 * x) + 6;
-            } else {
-                d += 4 * (x - y) + 10;
-                y--;
-            }
-            x++;
+        if (deltaY > deltaX) {
+            deltaX = deltaY;
+            deltaY = Math.abs(x2 - x1);
+            swap = true;
         }
+
+        int y = y1;
+        int x = x1;
+        int d = (2 * deltaY) - deltaX;
+
+        for (int i = 0; i < deltaX; i++) {
+            if ((x > 0 && x < accum[0].length) && (y > 0 && y < accum.length)) {
+                accum[y][x] += 1;
+            }
+
+            while (d >= 0) {
+                d -= 2 * deltaX;
+                if (swap) {
+                    x += s1;
+                } else {
+                    y += s2;
+                }
+            }
+            d += 2 * deltaY;
+            if (swap) {
+                y += s2;
+            } else {
+                x += s1;
+            }
+        }
+    }
+
+    private static BufferedImage HoughCircleDetection(BufferedImage img, int[][] xGrad, int[][] yGrad) {
+        int[][] accum = new int[img.getHeight()][img.getWidth()];
+        BufferedImage circles = new BufferedImage(img.getWidth(), img.getHeight(), img.getType());
+
+        int length = (int) Math.round(Math.hypot(img.getWidth(), img.getHeight()));
+
+        for (int y = 0; y < img.getHeight(); y++) {
+            for (int x = 0; x < img.getWidth(); x++) {
+                int lum = new Color(img.getRGB(x, y)).getRed();
+                if (lum == 255) {
+                    int xLum = xGrad[y][x];
+                    int yLum = yGrad[y][x];
+                    double theta = Math.atan2(yLum, xLum);
+
+                    int x1 = (int) Math.round(x + length * Math.cos(theta));
+                    int y1 = (int) Math.round(y + length * Math.sin(theta));
+
+                    int x2 = (int) Math.round(x + (-length * Math.cos(theta)));
+                    int y2 = (int) Math.round(y + (-length * Math.sin(theta)));
+
+                    DrawLine(x1, y1, x2, y2, accum);
+                }
+            }
+        }
+
+        int minVal = Integer.MAX_VALUE;
+        int maxVal = Integer.MIN_VALUE;
+        for (int y = 0; y < img.getHeight(); y++) {
+            for (int x = 0; x < img.getWidth(); x++) {
+                if (minVal > accum[y][x]) {
+                    minVal = accum[y][x];
+                }
+                if (maxVal < accum[y][x]) {
+                    maxVal = accum[y][x];
+                }
+            }
+        }
+
+        for (int y = 0; y < img.getHeight(); y++) {
+            for (int x = 0; x < img.getWidth(); x++) {
+                int lum = Math.round((255 * (accum[y][x] - minVal)) / ((float) (maxVal - minVal)));
+                circles.setRGB(x, y, new Color(lum, lum, lum).getRGB());
+            }
+        }
+
+        return circles;
     }
 
     public MainWindow() {
